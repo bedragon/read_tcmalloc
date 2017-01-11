@@ -85,10 +85,10 @@ static inline int ClassIndex(int s) {
 
 首先通过用户申请的size(<=256k)使用ClassIndex算出的index1，再通过在class_array_中index1的位置找到这个size对应的分配策略索引index2，index2就是剩下的三个数组的索引，举个例子： 假如申请168字节的内存，首先通过ClassIndex算出index1=21，然后通过class_array_[21]得到index2=12，通过index2在三个数组中依次得到176，32，1，代表的意思就是thread_cache从每个节点大小为176（下标索引为12）的链表中取出一个返回给用户，如果thread_cache不够，需要从central_freelist[12]中取，则每次取32个大小为176字节的块，如果central_freelist[12]也不够,则向page_heap申请1页并把1页按照176字节为单位切分成块，返回32个给thread_cache，好了，总结：
 
--用户向thread_cache申请168字节
--假设此时thread_cache为空，通过查表，得知168字节的申请应该向对应176字节的central_freelist[12]申请，并且每次申请32个object（每个176字节）
--假设此时central_freelist[12]也为空，通过查表，得知自己每次应该向page_heap申请1页，也就是8K，然后把8K分成以176字节为单位的块，并且返回32个块给thread_cache,剩下的留着备用
--thread_cache从central_freelist拿到了32个object，把其中一个返回给用户，剩下的31个留着备用
+- 用户向thread_cache申请168字节
+- 假设此时thread_cache为空，通过查表，得知168字节的申请应该向对应176字节的central_freelist[12]申请，并且每次申请32个object（每个176字节）
+- 假设此时central_freelist[12]也为空，通过查表，得知自己每次应该向page_heap申请1页，也就是8K，然后把8K分成以176字节为单位的块，并且返回32个块给thread_cache,剩下的留着备用
+- thread_cache从central_freelist拿到了32个object，把其中一个返回给用户，剩下的31个留着备用
 大内存的分配
 
 大内存的分配不走thread_cache和central_freelist，直接从page_heap申请，这个比较简单，后面的章节再说
