@@ -275,7 +275,7 @@ ThreadCache* ThreadCache::NewHeap(pthread_t tid) {
 ```
 CreateIfNecessary创建一个ThreadCache对象，并且将该对象与当前线程的pthread_key_关联，同时添加到ThreadCache链表的头部。这里有个特别的情况需要说明，首次调用malloc所创建的ThreadCache对象没有和pthread_key_关联，只是添加到了ThreadCache链表中去了，程序可能还会在tsd_inited_为true之前多次调用malloc，也就会多次进入CreateCacheIfNecessary函数，这时函数中会去遍历ThreadCache链表，发现当前线程已经创建好的ThreadCache对象。
 总结
-1. 线程局部数据的实现可分为静态和动态两种。
-2. tcmalloc以动态线程局部数据实现为主，静态为辅。
-3. 通过全局静态对象的构造函数来创建Thread Specific Key。
-4. 线程首次调用GetCache函数会触发线程专属的ThreadCache对象创建并与pthread_key_关联，添加到ThreadCache链表。
+- 1. 线程局部数据的实现可分为静态和动态两种。
+- 2. tcmalloc以动态线程局部数据实现为主，静态为辅。
+- 3. 通过全局静态对象的构造函数来创建Thread Specific Key。
+- 4. 线程首次调用GetCache函数会触发线程专属的ThreadCache对象创建并与pthread_key_关联，添加到ThreadCache链表。
