@@ -6,7 +6,7 @@
 
 对，从内存地址入手！不管怎么着，PageHeap肯定要通过brk或者mmap来向操作系统申请内存，得到的是一个(void*)指针，4个字节，那么4G的内存对应的地址范围就是(0x00000000 ~ 0xFFFFFFFF),我们知道PageHeap定义的1页为8K，也就是地址的低13位是页内偏移，高19位则是页索引，最简单的办法就是用一个一维数组，一共1«19个元素，每个元素指向其对应的1页，不过这样的一维设计有点太简单粗暴，TCMalloc采用的是2级映射，高19位继续分成5位和14位，如下图上半部分所示：
 
-
+![image](https://github.com/bedragon/read_tcmalloc/blob/master/TCMalloc-2-PageHeap-pic1.png)
 
 先不管span，这其实就是一个2维数组，定义如下：
 ```
