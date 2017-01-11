@@ -65,6 +65,7 @@ index | class_to_size_ | num_objects_to_move_ | class_to_pages_
 32 | 1152 | 32 | 2
 85 | 262144 | 2 | 32
 > 注意现在新版num_objects_to_move_最大是512 为什么是这个现在没弄懂，也许这个值以后还会变
+
 这里有一点要特殊说明一下，index=32的策略，objectsize=1152，可是大家注意到，pages_=2,也就是说central_freelist向page_heap每次申请2页，可是这里其实1页也是够的啊，为什么要2页呢，关于页数的确定有两个因素，一是保证移动的页数按照objectsize切分不小于num_objects_to_move/4，1152对应的num_objects_to_move是32，而一页最多只能分配7个object，不够32/4=8个，所以需要两页，二是因为TCMalloc为了保证尽可能少的空间浪费，假设页数为N，需要保证((N * 8k) % objectsize / （N * 8k）) > 12.5%
 
 分配策略已经压缩在86种，可是用户传过来的值怎么映射到这86种呢，每一个用户申请的size(<=256k)通过ClassIndex(size)都会算出一个值，这些值的范围是0~2168, ClassIndex算法如下，大致就是<=1024字节的按照8字节对齐，>1024字节的按照128字节对齐，所以256k一共有2169种，TCMalloc通过class_array_来保存着2169中索引向86种策略的映射
@@ -84,10 +85,10 @@ static inline int ClassIndex(int s) {
 
 首先通过用户申请的size(<=256k)使用ClassIndex算出的index1，再通过在class_array_中index1的位置找到这个size对应的分配策略索引index2，index2就是剩下的三个数组的索引，举个例子： 假如申请168字节的内存，首先通过ClassIndex算出index1=21，然后通过class_array_[21]得到index2=12，通过index2在三个数组中依次得到176，32，1，代表的意思就是thread_cache从每个节点大小为176（下标索引为12）的链表中取出一个返回给用户，如果thread_cache不够，需要从central_freelist[12]中取，则每次取32个大小为176字节的块，如果central_freelist[12]也不够,则向page_heap申请1页并把1页按照176字节为单位切分成块，返回32个给thread_cache，好了，总结：
 
-用户向thread_cache申请168字节
-假设此时thread_cache为空，通过查表，得知168字节的申请应该向对应176字节的central_freelist[12]申请，并且每次申请32个object（每个176字节）
-假设此时central_freelist[12]也为空，通过查表，得知自己每次应该向page_heap申请1页，也就是8K，然后把8K分成以176字节为单位的块，并且返回32个块给thread_cache,剩下的留着备用
-thread_cache从central_freelist拿到了32个object，把其中一个返回给用户，剩下的31个留着备用
+-用户向thread_cache申请168字节
+-假设此时thread_cache为空，通过查表，得知168字节的申请应该向对应176字节的central_freelist[12]申请，并且每次申请32个object（每个176字节）
+-假设此时central_freelist[12]也为空，通过查表，得知自己每次应该向page_heap申请1页，也就是8K，然后把8K分成以176字节为单位的块，并且返回32个块给thread_cache,剩下的留着备用
+-thread_cache从central_freelist拿到了32个object，把其中一个返回给用户，剩下的31个留着备用
 大内存的分配
 
 大内存的分配不走thread_cache和central_freelist，直接从page_heap申请，这个比较简单，后面的章节再说
