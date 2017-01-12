@@ -64,7 +64,7 @@ index | class_to_size_ | num_objects_to_move_ | class_to_pages_
 12 | 176 | 32 | 1
 32 | 1152 | 32 | 2
 85 | 262144 | 2 | 32
-> 注意现在新版num_objects_to_move_最大是512 为什么是这个现在没弄懂，也许这个值以后还会变
+> 注意现在新版num_objects_to_move_最大是512 问了下作者，这个值是根据经验或者猜测来定的 参见https://github.com/gperftools/gperftools/issues/862#issuecomment-272076339
 
 这里有一点要特殊说明一下，index=32的策略，objectsize=1152，可是大家注意到，pages_=2,也就是说central_freelist向page_heap每次申请2页，可是这里其实1页也是够的啊，为什么要2页呢，关于页数的确定有两个因素，一是保证移动的页数按照objectsize切分不小于num_objects_to_move/4，1152对应的num_objects_to_move是32，而一页最多只能分配7个object，不够32/4=8个，所以需要两页，二是因为TCMalloc为了保证尽可能少的空间浪费，假设页数为N，需要保证((N * 8k) % objectsize / （N * 8k）) > 12.5%
 
