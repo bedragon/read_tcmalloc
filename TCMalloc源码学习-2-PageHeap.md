@@ -52,7 +52,7 @@ struct Span {
   enum { IN_USE, ON_NORMAL_FREELIST, ON_RETURNED_FREELIST };
 };
 ```
-来看span主要的成员的，start说白了就是地址的高19位，length就是这个span包含了几页，从上图来看，leaf的第2，3个元素指向同一个span，那么第2，3个元素对应的第2，3个页也就属于该span，start = 0x00000001, length = 2, 看到next和prev就能猜到每个span之间可以穿成一个链表，objects我们上一篇讲到，PageHeap在把页返回给特定central_freelist时，会根据central_freelist的属性把1页划分成多个objects,然后返回一些个objects给central_freelist，所以这里的objects其实就是当前可用的第一个objects的地址，下次要用的时候直接从这拿就好了，每个objects虽然紧挨着，不过这里的实现还是将串成list，类似数组链表的实现方式，refcount其实就是记录已经分配出去的objects的个数，如果为0就代表本span对应的所有页都已经没用了，可以回收。
+来看span主要的成员的，start说白了就是地址的高19位，length就是这个span包含了几页，从上图来看，leaf的第2，3个元素指向同一个span，那么第2，3个元素对应的第2，3个页也就属于该span，start = 0x2000, length = 2, 看到next和prev就能猜到每个span之间可以穿成一个链表，objects我们上一篇讲到，PageHeap在把页返回给特定central_freelist时，会根据central_freelist的属性把1页划分成多个objects,然后返回一些个objects给central_freelist，所以这里的objects其实就是当前可用的第一个objects的地址，下次要用的时候直接从这拿就好了，每个objects虽然紧挨着，不过这里的实现还是将串成list，类似数组链表的实现方式，refcount其实就是记录已经分配出去的objects的个数，如果为0就代表本span对应的所有页都已经没用了，可以回收。
 
 基本的东西就这些了，下面直接上代码看PageHeap如何New和Delete内存的，代码重要的地方加了注释
 ```
